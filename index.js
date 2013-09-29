@@ -8,6 +8,18 @@
   var dispatch = true;
 
   /**
+   * Exclude matching links from interception
+   */
+
+  var exclude;
+
+  /**
+   * Include links matching selector for interception
+   */
+
+  var include;
+
+  /**
    * Base path.
    */
 
@@ -94,6 +106,8 @@
     if (false === options.dispatch) dispatch = false;
     if (false !== options.popstate) window.addEventListener('popstate', onpopstate, false);
     if (false !== options.click) window.addEventListener('click', onclick, false);
+    if (options.exclude) exclude = options.exclude;
+    if (options.include) include = options.include;
     if (!dispatch) return;
     var url = location.pathname + location.search + location.hash;
     page.replace(url, null, true, dispatch);
@@ -123,8 +137,9 @@
 
   page.show = function(path, state, dispatch){
     var ctx = new Context(path, state);
+    ctx.pushState();
     if (false !== dispatch) page.dispatch(ctx);
-    if (!ctx.unhandled) ctx.pushState();
+    //if (!ctx.unhandled) 
     return ctx;
   };
 
@@ -386,6 +401,12 @@
     var el = e.target;
     while (el && 'A' != el.nodeName) el = el.parentNode;
     if (!el || 'A' != el.nodeName) return;
+
+    // If using selective inclusion of links, check match
+    if (include && !el.webkitMatchesSelector(include)) return;
+
+    // Check if link is excluded from interception
+    if (exclude && el.webkitMatchesSelector(exclude)) return;
 
     // ensure non-hash for the same path
     var link = el.getAttribute('href');
